@@ -11,10 +11,13 @@ var morgan = require('morgan');
 var _ = require('underscore');
 var path = require('path');
 var mkdirp = require('mkdirp');
+var cron=require('./utils/cron.js');
 
 var port = parseInt(process.env.PORT, 10) || 19431;
 
 mkdirp('uploads');
+
+cron();
 
 var app = express();
 app.use(cors());
@@ -36,7 +39,6 @@ app.get('/uploads/:filename', function (req, res) {
 });
 
 app.get('/', function (req, res) {
-
     var url_parts = url.parse(req.url, true);
     var query = url_parts.query;
 
@@ -75,7 +77,6 @@ app.get('/', function (req, res) {
                         filenamesReal.push('uploads/' + bannerNames[index] + (new Date().valueOf()) + '.jpeg');
                         // render image
                         page.render(filenamesReal[index], {format: 'jpeg', quality: qualityVals[index] || 100});
-
                     });
                     //close phantom
                     ph.exit();
