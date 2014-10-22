@@ -12,6 +12,7 @@ var _ = require('underscore');
 var path = require('path');
 var mkdirp = require('mkdirp');
 var cron = require('./utils/cron.js');
+var moment = require('moment');
 
 var port = parseInt(process.env.PORT, 10) || 19431;
 
@@ -57,12 +58,12 @@ app.get('/', function (req, res) {
 
 
     // archive name
-    var zipname = "test" + (new Date().valueOf()) + ".zip";
+    var date = moment().format('MM-YYYY-DD_h:mm:ss');
+    var zipname = "bcp(" + date + ").zip";
 
     phantom.create(function (ph) {
         ph.createPage(function (page) {
             // set correct viewport
-            console.log('success!');
             page.set('viewportSize', {width: 1920, height: 6000});
 
             page.open(query.url, function (status) {
