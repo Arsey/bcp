@@ -11,11 +11,12 @@ var morgan = require('morgan');
 var _ = require('underscore');
 var path = require('path');
 var mkdirp = require('mkdirp');
-var cron=require('./utils/cron.js');
+var cron = require('./utils/cron.js');
 
 var port = parseInt(process.env.PORT, 10) || 19431;
 
 mkdirp('uploads');
+mkdirp('zip');
 
 cron();
 
@@ -91,13 +92,13 @@ app.get('/', function (req, res) {
 
                             var buffer = zip.generate({type: "nodebuffer"});
                             // save archive to filesystem
-                            fs.writeFile(zipname, buffer, function (err) {
+                            fs.writeFile('zip/' + zipname, buffer, function (err) {
                                 // download zip
                                 if (err)
                                     throw err;
-                                res.setHeader('Content-disposition', 'attachment; filename=' + zipname);
+                                res.setHeader('Content-disposition', 'attachment; filename=' + 'zip/' + zipname);
                                 res.setHeader('Content-type', 'zip');
-                                var readFile = fs.createReadStream(zipname);
+                                var readFile = fs.createReadStream('zip/' + zipname);
                                 readFile.pipe(res);
                             });
 
