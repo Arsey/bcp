@@ -1,0 +1,14 @@
+#!/bin/sh
+mkdir -p /home/lbsbamboo/webapps/flat/run
+pid=$(/sbin/pidof /home/lbsbamboo/webapps/flat/bin/node)
+if echo "$pid" | grep -q " "; then
+  pid=""
+fi
+if [ -n "$pid" ]; then
+  user=$(ps -p $pid -o user | tail -n 1)
+  if [ $user = "lbsbamboo" ]; then
+    exit 0
+  fi
+fi
+nohup /home/lbsbamboo/webapps/flat/bin/node /home/lbsbamboo/webapps/flat/server.js > /dev/null 2>&1 &
+/sbin/pidof /home/lbsbamboo/webapps/flat/bin/node > /home/lbsbamboo/webapps/flat/run/node.pid
