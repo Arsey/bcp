@@ -90,9 +90,11 @@ app.get('/', function (req, res) {
                             if (query.download) {
                                 setTimeout(function () {
                                     banners.forEach(function (el, index) {
-                                        // read a file and add it to a zip
-                                        var f = fs.readFileSync(filenamesReal[index]);
-                                        zip.file(filenames[index], f, {binary: true});
+                                        if (fs.existsSync(filenamesReal[index])) {
+                                            // read a file and add it to a zip
+                                            var f = fs.readFileSync(filenamesReal[index]);
+                                            zip.file(filenames[index], f, {binary: true});
+                                        }
                                     });
 
                                     var buffer = zip.generate({type: "nodebuffer"});
