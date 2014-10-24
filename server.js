@@ -88,35 +88,40 @@ app.get('/', function (req, res) {
                             ph.exit();
                             // if downloading
                             if (query.download) {
-                                setTimeout(function () {
 
-                                    banners.forEach(function (el, index) {
-                                        while (fs.existsSync(filenamesReal[index]) === false) {
-                                            winston.info('waiting for a file...');
-                                        }
-                                    });
+                                banners.forEach(function (el, index) {
+                                    while (fs.existsSync(filenamesReal[index]) === false) {
+                                        winston.info('waiting for a file...');
+                                    }
 
-                                    banners.forEach(function (el, index) {
-                                        if (fs.existsSync(filenamesReal[index])) {
-                                            // read a file and add it to a zip
-                                            var f = fs.readFileSync(filenamesReal[index]);
-                                            zip.file(filenames[index], f, {binary: true});
-                                        }
-                                    });
+                                    var size = 0;
+                                    while (size === 0) {
+                                        winston.info('waiting for a file to be modified...');
+                                        var stats = fs.statSync(filenamesReal[index]);
+                                        size = stats["size"];
+                                    }
+                                });
 
-                                    var buffer = zip.generate({type: "nodebuffer"});
-                                    // save archive to filesystem
-                                    fs.writeFile('zip/' + zipname, buffer, function (err) {
-                                        // download zip
-                                        if (err)
-                                            throw err;
-                                        res.setHeader('Content-disposition', 'attachment; filename=' + 'zip/' + zipname);
-                                        res.setHeader('Content-type', 'zip');
-                                        var readFile = fs.createReadStream('zip/' + zipname);
-                                        readFile.pipe(res);
-                                    });
+                                banners.forEach(function (el, index) {
+                                    if (fs.existsSync(filenamesReal[index])) {
+                                        // read a file and add it to a zip
+                                        var f = fs.readFileSync(filenamesReal[index]);
+                                        zip.file(filenames[index], f, {binary: true});
+                                    }
+                                });
 
-                                }, 1000);
+                                var buffer = zip.generate({type: "nodebuffer"});
+                                // save archive to filesystem
+                                fs.writeFile('zip/' + zipname, buffer, function (err) {
+                                    // download zip
+                                    if (err)
+                                        throw err;
+                                    res.setHeader('Content-disposition', 'attachment; filename=' + 'zip/' + zipname);
+                                    res.setHeader('Content-type', 'zip');
+                                    var readFile = fs.createReadStream('zip/' + zipname);
+                                    readFile.pipe(res);
+                                });
+
                             } else {
                                 // if simply return image links
                                 res.setHeader('Content-Type', 'application/json');
