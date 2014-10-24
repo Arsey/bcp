@@ -90,6 +90,11 @@ app.get('/', function (req, res) {
                             if (query.download) {
                                 setTimeout(function () {
                                     banners.forEach(function (el, index) {
+
+                                        while (fs.existsSync(filenamesReal[index]) === false) {
+                                            winston.info('waiting for a file...');
+                                        }
+
                                         if (fs.existsSync(filenamesReal[index])) {
                                             // read a file and add it to a zip
                                             var f = fs.readFileSync(filenamesReal[index]);
