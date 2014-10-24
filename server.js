@@ -13,6 +13,7 @@ var path = require('path');
 var mkdirp = require('mkdirp');
 var cron = require('./utils/cron.js');
 var moment = require('moment');
+var winston = require('winston');
 
 var port = parseInt(process.env.PORT, 10) || 19431;
 
@@ -61,62 +62,68 @@ app.get('/', function (req, res) {
     var date = moment().format('MM-YYYY-DD_h:mm:ss');
     var zipname = "bcp(" + date + ").zip";
 
-    phantom.create(function (ph) {
-        ph.createPage(function (page) {
-            // set correct viewport
-            page.set('viewportSize', {width: 1920, height: 6000});
+    phantom.create(
+        function (ph) {
+            ph.createPage(function (page) {
+                // set correct viewport
+                page.set('viewportSize', {width: 1920, height: 6000});
 
-            page.open(query.url, function (status) {
-                page.evaluate(function () {
-                }, function (result) {
-                    // make actino for eeach banner
-                    banners.forEach(function (el, index) {
-                        //set render area
-                        page.set('clipRect', query.offsets[index]);
-                        //for zip
-                        filenames.push(bannerNames[index] + '.jpeg');
-                        // for save to drive
-                        filenamesReal.push('uploads/' + bannerNames[index] + (new Date().valueOf()) + '.jpeg');
-                        // render image
-                        page.render(filenamesReal[index], {format: 'jpeg', quality: qualityVals[index] || 100});
-                    });
-                    //close phantom
-                    ph.exit();
-                    // if downloading
-                    if (query.download) {
-                        setTimeout(function () {
-
+                page.open(query.url, function (status) {
+                    page.evaluate(function () {
+                        },
+                        //second evaluate func
+                        function (result) {
+                            // make actino for eeach banner
                             banners.forEach(function (el, index) {
-                                // read a file and add it to a zip
-                                zip.file(filenames[index], fs.readFileSync(filenamesReal[index]), {binary: true});
+                                //set render area
+                                page.set('clipRect', query.offsets[index]);
+                                //for zip
+                                filenames.push(bannerNames[index] + '.jpeg');
+                                // for save to drive
+                                filenamesReal.push('uploads/' + bannerNames[index] + (new Date().valueOf()) + '.jpeg');
+                                // render image
+                                page.render(filenamesReal[index], {format: 'jpeg', quality: qualityVals[index] || 100});
                             });
+                            //close phantom
+                            ph.exit();
+                            // if downloading
+                            if (query.download) {
+                                setTimeout(function () {
+                                    banners.forEach(function (el, index) {
+                                        // read a file and add it to a zip
+                                        var f = fs.readFileSync(filenamesReal[index]);
+                                        zip.file(filenames[index], f, {binary: true});
+                                    });
 
-                            var buffer = zip.generate({type: "nodebuffer"});
-                            // save archive to filesystem
-                            fs.writeFile('zip/' + zipname, buffer, function (err) {
-                                // download zip
-                                if (err)
-                                    throw err;
-                                res.setHeader('Content-disposition', 'attachment; filename=' + 'zip/' + zipname);
-                                res.setHeader('Content-type', 'zip');
-                                var readFile = fs.createReadStream('zip/' + zipname);
-                                readFile.pipe(res);
-                            });
+                                    var buffer = zip.generate({type: "nodebuffer"});
+                                    // save archive to filesystem
+                                    fs.writeFile('zip/' + zipname, buffer, function (err) {
+                                        // download zip
+                                        if (err)
+                                            throw err;
+                                        res.setHeader('Content-disposition', 'attachment; filename=' + 'zip/' + zipname);
+                                        res.setHeader('Content-type', 'zip');
+                                        var readFile = fs.createReadStream('zip/' + zipname);
+                                        readFile.pipe(res);
+                                    });
 
-                        }, 500);
-                    } else {
-                        // if simply return image links
-                        res.setHeader('Content-Type', 'application/json');
-                        res.end(JSON.stringify({params: query, images: filenamesReal}));
-                    }
+                                }, 500);
+                            } else {
+                                // if simply return image links
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify({params: query, images: filenamesReal}));
+                            }
+                        }, 'banners');
                 });
             });
-        });
-    }, {
-        dnodeOpts: {
-            weak: false
+
+        },
+        {
+            dnodeOpts: {
+                weak: false
+            }
         }
-    });
+    );
     return false;
 
 
